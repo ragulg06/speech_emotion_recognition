@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speech Recognition with LSTM</title>
+    <title>Speech Emotion Recognition</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -14,6 +14,12 @@
             --dark-color: #212529;
             --success-color: #4cc9f0;
             --danger-color: #f72585;
+            --angry-color: #f72585;
+            --disgust-color: #4cc9f0;
+            --fear-color: #7209b7;
+            --happy-color: #38b000;
+            --neutral-color: #4895ef;
+            --sad-color: #4361ee;
         }
         
         * {
@@ -211,12 +217,75 @@
             margin-bottom: 1.5rem;
         }
         
-        .transcription {
-            background-color: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 5px;
-            min-height: 100px;
-            border-left: 4px solid var(--primary-color);
+        .emotion-result {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .emotion-text {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        
+        .angry {
+            color: var(--angry-color);
+        }
+        
+        .disgust {
+            color: var(--disgust-color);
+        }
+        
+        .fear {
+            color: var(--fear-color);
+        }
+        
+        .happy {
+            color: var(--happy-color);
+        }
+        
+        .neutral {
+            color: var(--neutral-color);
+        }
+        
+        .sad {
+            color: var(--sad-color);
+        }
+        
+        .confidence-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .confidence-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .confidence-label {
+            width: 80px;
+            font-weight: 500;
+        }
+        
+        .confidence-bar-container {
+            flex: 1;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .confidence-bar {
+            height: 100%;
+            border-radius: 10px;
+        }
+        
+        .confidence-value {
+            width: 60px;
+            text-align: right;
         }
         
         .audio-player {
@@ -249,8 +318,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>Speech Recognition with LSTM</h1>
-            <p class="subtitle">Convert your speech to text with our advanced deep learning model</p>
+            <h1>Speech Emotion Recognition</h1>
+            <p class="subtitle">Detect emotions from speech using deep learning</p>
         </header>
         
         <div class="features">
@@ -260,7 +329,7 @@
                     Live Recording
                 </h2>
                 <p class="feature-description">
-                    Record your voice in real-time and get instant transcription. Perfect for dictation, notes, and more.
+                    Record your voice in real-time and get instant emotion analysis. Perfect for understanding emotional tone.
                 </p>
             </div>
             
@@ -270,7 +339,7 @@
                     Audio Upload
                 </h2>
                 <p class="feature-description">
-                    Upload existing audio files (WAV, MP3) and let our model transcribe the content for you.
+                    Upload existing audio files (WAV, MP3) and analyze the emotional content.
                 </p>
             </div>
         </div>
@@ -280,12 +349,12 @@
             <form class="upload-form" method="POST" action="/upload" enctype="multipart/form-data">
                 <input type="file" name="file" id="file" class="file-input" accept=".wav,.mp3,.ogg">
                 <label for="file" class="file-label">Choose Audio File</label>
-                <button type="submit" class="submit-btn">Transcribe</button>
+                <button type="submit" class="submit-btn">Analyze Emotion</button>
             </form>
         </div>
         
         <div class="recording-section">
-            <h2 class="section-title">Live Speech Recognition</h2>
+            <h2 class="section-title">Live Emotion Detection</h2>
             <div class="recording-controls">
                 <button id="startRecording" class="record-btn">Start Recording</button>
                 <button id="stopRecording" class="stop-btn" disabled>Stop Recording</button>
@@ -294,14 +363,36 @@
         </div>
         
         <div class="result-section">
-            <h2 class="result-title">Transcription Result</h2>
-            <div class="transcription" id="transcriptionResult">
-                {% if transcription %}
-                    {{ transcription }}
-                {% else %}
-                    Your transcription will appear here...
-                {% endif %}
+            <h2 class="result-title">Emotion Analysis Result</h2>
+            
+            {% if emotion %}
+            <div class="emotion-result">
+                <div class="emotion-text {{ emotion }}">
+                    Detected Emotion: {{ emotion }}
+                </div>
             </div>
+            
+            <div class="confidence-bars">
+                {% for emotion, confidence in confidences.items() %}
+                <div class="confidence-item">
+                    <div class="confidence-label">{{ emotion }}</div>
+                    <div class="confidence-bar-container">
+                        <div class="confidence-bar {{ emotion }}" 
+                             style="width: {{ confidence }}; background-color: var(--{{ emotion }}-color);">
+                        </div>
+                    </div>
+                    <div class="confidence-value">{{ confidence }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="emotion-result">
+                <div class="emotion-text">
+                    Your emotion analysis will appear here...
+                </div>
+            </div>
+            {% endif %}
+            
             {% if audio_source %}
             <audio controls class="audio-player">
                 <source src="{{ audio_source }}" type="audio/wav">
@@ -311,7 +402,7 @@
         </div>
         
         <footer>
-            <p>Speech Recognition System using LSTM & TensorFlow</p>
+            <p>Speech Emotion Recognition System using LSTM & TensorFlow</p>
         </footer>
     </div>
     
@@ -320,7 +411,6 @@
         const startBtn = document.getElementById('startRecording');
         const stopBtn = document.getElementById('stopRecording');
         const statusText = document.getElementById('recordingStatus');
-        const transcriptionResult = document.getElementById('transcriptionResult');
         
         startBtn.addEventListener('click', async () => {
             startBtn.disabled = true;
@@ -358,8 +448,9 @@
                 const data = await response.json();
                 console.log(data);
                 
-                if (data.transcription) {
-                    transcriptionResult.textContent = data.transcription;
+                if (data.emotion) {
+                    // Reload the page to show results
+                    window.location.reload();
                 }
             } catch (error) {
                 console.error('Error:', error);
