@@ -2,6 +2,7 @@ tensorflow
 flask
 librosa
 sounddevice
+soundfile
 numpy
 pydub
 python-dotenv
