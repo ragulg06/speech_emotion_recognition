@@ -1,0 +1,9 @@
+tensorflow
+flask
+librosa
+sounddevice
+numpy
+pydub
+python-dotenv
+gunicorn
+scikit-learn

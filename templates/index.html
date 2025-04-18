@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition with LSTM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 2rem;
+        }
+        
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature-card {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-icon {
+            margin-right: 0.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .feature-description {
+            color: #6c757d;
+            margin-bottom: 1.5rem;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .upload-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        
+        .file-label:hover {
+            background-color: var(--secondary-color);
+        }
+        
+        .submit-btn {
+            padding: 1rem 2rem;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            background-color: #3a86ff;
+        }
+        
+        .recording-section {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .recording-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .record-btn {
+            padding: 1rem 2rem;
+            background-color: var(--danger-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .record-btn:hover {
+            background-color: #d0006f;
+        }
+        
+        .stop-btn {
+            padding: 1rem 2rem;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        
+        .stop-btn:hover {
+            background-color: #3a9fc9;
+        }
+        
+        .recording-status {
+            text-align: center;
+            font-weight: 500;
+            color: var(--danger-color);
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        .result-section {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-title {
+            font-size: 1.5rem;
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+        }
+        
+        .transcription {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 5px;
+            min-height: 100px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .features {
+                flex-direction: column;
+            }
+            
+            .feature-card {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Speech Recognition with LSTM</h1>
+            <p class="subtitle">Convert your speech to text with our advanced deep learning model</p>
+        </header>
+        
+        <div class="features">
+            <div class="feature-card">
+                <h2 class="feature-title">
+                    <span class="feature-icon">🎤</span>
+                    Live Recording
+                </h2>
+                <p class="feature-description">
+                    Record your voice in real-time and get instant transcription. Perfect for dictation, notes, and more.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <h2 class="feature-title">
+                    <span class="feature-icon">📁</span>
+                    Audio Upload
+                </h2>
+                <p class="feature-description">
+                    Upload existing audio files (WAV, MP3) and let our model transcribe the content for you.
+                </p>
+            </div>
+        </div>
+        
+        <div class="upload-section">
+            <h2 class="section-title">Upload Audio File</h2>
+            <form class="upload-form" method="POST" action="/upload" enctype="multipart/form-data">
+                <input type="file" name="file" id="file" class="file-input" accept=".wav,.mp3,.ogg">
+                <label for="file" class="file-label">Choose Audio File</label>
+                <button type="submit" class="submit-btn">Transcribe</button>
+            </form>
+        </div>
+        
+        <div class="recording-section">
+            <h2 class="section-title">Live Speech Recognition</h2>
+            <div class="recording-controls">
+                <button id="startRecording" class="record-btn">Start Recording</button>
+                <button id="stopRecording" class="stop-btn" disabled>Stop Recording</button>
+            </div>
+            <p id="recordingStatus" class="recording-status">Recording in progress...</p>
+        </div>
+        
+        <div class="result-section">
+            <h2 class="result-title">Transcription Result</h2>
+            <div class="transcription" id="transcriptionResult">
+                {% if transcription %}
+                    {{ transcription }}
+                {% else %}
+                    Your transcription will appear here...
+                {% endif %}
+            </div>
+            {% if audio_source %}
+            <audio controls class="audio-player">
+                <source src="{{ audio_source }}" type="audio/wav">
+                Your browser does not support the audio element.
+            </audio>
+            {% endif %}
+        </div>
+        
+        <footer>
+            <p>Speech Recognition System using LSTM & TensorFlow</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Handle recording buttons
+        const startBtn = document.getElementById('startRecording');
+        const stopBtn = document.getElementById('stopRecording');
+        const statusText = document.getElementById('recordingStatus');
+        const transcriptionResult = document.getElementById('transcriptionResult');
+        
+        startBtn.addEventListener('click', async () => {
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            statusText.style.display = 'block';
+            
+            try {
+                const response = await fetch('/start_recording', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                console.log(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+        
+        stopBtn.addEventListener('click', async () => {
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            statusText.style.display = 'none';
+            
+            try {
+                const response = await fetch('/stop_recording', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                console.log(data);
+                
+                if (data.transcription) {
+                    transcriptionResult.textContent = data.transcription;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+        
+        // Update file label when file is selected
+        const fileInput = document.getElementById('file');
+        const fileLabel = document.querySelector('.file-label');
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileLabel.textContent = fileInput.files[0].name;
+            } else {
+                fileLabel.textContent = 'Choose Audio File';
+            }
+        });
+    </script>
+</body>
+</html>
